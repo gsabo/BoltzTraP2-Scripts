@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Tested on Ubuntu 20.04.1 LTS with Python 3.8.5
+# Tested on Ubuntu 20.04.2 LTS with Python 3.8.5
 
 eps3 = 1.0e-3
 inf6 = 1.0e6
@@ -12,8 +12,8 @@ def main(argv = None):
         self = '/' + argv[0]
         self = self[len(self)-self[::-1].find('/'):]
         print("")
-        print("    Version 1.0.2")
-        print("    Converts the output of Quantum Espresso 6.6")
+        print("    Version 1.0.3")
+        print("    Converts the output of Quantum Espresso 6.7")
         print("    to the input of BoltzTraP2. Modified version of qe2boltz.py for BoltzTraP2")
         print("    from that orginal written by Georgy Samsonidze,")
         print("    An Li, Daehyun Wee, Bosch Research (October 2011).")
@@ -32,9 +32,7 @@ def main(argv = None):
         print("    inteqp.flavor.x (the default is bands.out or bandstructure.dat,")
         print("    not used if format = pw)")
         print("")
-        print("    Creates files BoltzTraP.def, prefix.intrans, prefix.energy, prefix.structure.")
-        print("    File names and parameters written to BoltzTraP.def and prefix.intrans")
-        print("    are hard-coded into the script.")
+        print("    Creates files prefix.energy and prefix.structure.")
         print("")
         return 1
 
@@ -134,8 +132,10 @@ def main(argv = None):
 
     if spin:
         nelec -= nbnd_exclude
+        nspin = 2
     else:
         nelec -= 2 * nbnd_exclude
+        nspin = 1
 
     symbolstring = []
     PosCartCoord = []
@@ -160,24 +160,25 @@ def main(argv = None):
         nrow = nbnd // ncol
         if nbnd % ncol != 0:
             nrow += 1
-        for ik in range(nkpt):
-            energy.append([])
-            nelem = ncol
-            for ir in range(nrow):   
+        for ispin in range(nspin):
+            for ik in range(nkpt):
+                energy.append([])
+                nelem = ncol
+                for ir in range(nrow):   
                 
-                # Store each energy line from case.nscf.out
-                eline = f_pw[idxbnd[ik] + ir]
+                    # Store each energy line from case.nscf.out
+                    eline = f_pw[idxbnd[ik] + ir]
                 
-                # Set loop counter for etext to zero
-                ei = 0
-                # "range(2," -> Skip the first 2 blank characters
-                # eline[ei:ei+9] -> Split energy line every 9 characters to the energy values
-                etext = [eline[ei:ei+9] for ei in range(2, len(eline), 9)]
+                    # Set loop counter for etext to zero
+                    ei = 0
+                    # "range(2," -> Skip the first 2 blank characters
+                    # eline[ei:ei+9] -> Split energy line every 9 characters to the energy values
+                    etext = [eline[ei:ei+9] for ei in range(2, len(eline), 9)]
                                                 
-                if ir == nrow - 1:
-                    nelem = nbnd - ncol * (nrow - 1)
-                for ie in range(nelem):  
-                    energy[ik].append(float(etext[ie]) / rydberg)
+                    if ir == nrow - 1:
+                        nelem = nbnd - ncol * (nrow - 1)
+                    for ie in range(nelem):  
+                        energy[ik].append(float(etext[ie]) / rydberg)
     elif ftype_inp == 'bands':
         energy = []
         ncol = 10
@@ -208,11 +209,12 @@ def main(argv = None):
                 energy[ik].append(float(f_inp[nhead + ik + ib * nkpt].split()[6]) / rydberg)
 
     f_energy = prefix + '\n'
-    f_energy += str(nkpt) + ' ' + str(int(spin) + 1) + ' ' + str(efermi) + '\n'
-    for ik in range(nkpt):
-        f_energy += str(kpoint[ik][0]) + ' ' + str(kpoint[ik][1]) + ' ' + str(kpoint[ik][2]) + ' ' + str(nbnd - nbnd_exclude) + '\n'
-        for ib in range(nbnd_exclude, nbnd):
-            f_energy += str(energy[ik][ib]) + '\n'
+    f_energy += str(nkpt) + ' ' + str(nspin) + ' ' + str(efermi) + '\n'
+    for ispin in range(nspin):
+        for ik in range(nkpt):
+            f_energy += str(kpoint[ik][0]) + ' ' + str(kpoint[ik][1]) + ' ' + str(kpoint[ik][2]) + ' ' + str(nbnd - nbnd_exclude) + '\n'
+            for ib in range(nbnd_exclude, nbnd):
+                f_energy += str(energy[ik][ib]) + '\n'
 
     f = open(fname_energy, 'w')
     f.write(f_energy)
