@@ -1,0 +1,205 @@
+164a165,368
+> def read_parse_QE_nscfout(filename):
+>     """Read in a QE prefix.nscf.out file, describing the electronic bands.
+> 
+>     The file contains information about lattice vectors, elements, atomic positions,
+>     k points, band energies, and
+>     (optionally) momentum matrix elements.
+> 
+>     Args:
+>         filename: path to the .nscf.out file
+> 
+>     Returns:
+>         An ASE Atoms object with crystal unit cell, 3D periodic, and appropriate atoms and positions
+>         A 5-tuple. The first element is the Fermi level. The second is the
+>         maximum occupancy per state. The third is an (nkpoints, 3) array with
+>         the coordinates of the irreducible k points of the system. The fourth
+>         contains the energy bands in an array. The fifth is either an array
+>         with the derivatives of the bands, or None if such information is not
+>         contained in the file.
+>     """
+> 
+>     lines = open(filename, 'r').readlines()
+> 
+>     ## Code adapted from qe2boltz.py ##
+> 
+>     line = 0
+>     eps3 = 1.0e-3
+>     inf6 = 1.0e6
+>     rydberg = 13.60569253
+>     i = 0
+>     natom = 0
+>     efermi_scf = (inf6 + eps3) / rydberg
+>     avec = []
+>     idxsym = []
+>     idxbnd = []
+>     spin = False
+>     spinorbit = False
+>     symbolstring = ''
+> 
+>     for line in lines:
+>         if 'lattice parameter (alat)  =' in line:
+>             alat = float(line.split()[4])
+>         elif ' a(' in line:
+>             atext = line[23:57].split()
+>             avec.append([float(atext[0]) * alat, float(atext[1]) * alat, float(atext[2]) * alat])
+>         elif 'cryst.   s' in line:
+>             idxsym.append(i)
+>         elif 'the Fermi energy is' in line:
+>             efermi_scf = float(line.split()[4]) / rydberg
+>         elif 'highest occupied, lowest unoccupied level' in line:
+>             efermi_scf = (float(line.split()[6]) + float(line.split()[7])) / (2.0 * rydberg)
+>         elif 'number of atoms' in line:
+>             natom = int(line.split()[4])
+>         elif 'Sym.Ops.' in line or 'Sym. Ops.' in line:
+>             nsym = int(line.split()[0])
+>         elif 'positions (cryst. coord.)' in line:
+>             idatom = i + 1
+>         elif 'No symmetry found' in line:
+>             nsym = 1
+>         elif 'number of k points=' in line:
+>             nkpt = int(line.split()[4])
+>         elif 'number of Kohn-Sham states=' in line:
+>             nbnd = int(line.split()[4])
+>         elif ' cryst. coord.' in line:
+>             idxkpt = i + 1
+>         elif 'band energies (ev)' in line or 'bands (ev)' in line:
+>             idxbnd.append(i + 2)
+>         elif 'SPIN' in line:
+>             spin = True
+>         elif 'spin-orbit' in line:
+>             spinorbit = True
+>         i += 1
+> 
+>     if abs(efermi_scf) > inf6 / rydberg:
+>         raise ValueError("Error: Fermi energy not found")
+>     else:
+>         efermi = efermi_scf
+> 
+>     symbolstring = []
+>     PosCartCoord = []
+>     lines1 = []
+>     lines2 = []
+>     for ia in range(natom):
+>             lines1 = lines[idatom + ia][15:24]
+>             lines2 = lines[idatom + ia][38:73] 
+>             atmtext1 = lines1.split()
+>             atmtext2 = lines2.split()
+>             symbolstring.append(atmtext1[0])
+>             PosCartCoord.append([float(atmtext2[0]),float(atmtext2[1]),float(atmtext2[2])])
+> 
+>     kpoint = []
+>     for ik in range(nkpt):
+>         ktext = lines[idxkpt + ik][20:56].split()
+>         kpoint.append([float(ktext[0]), float(ktext[1]), float(ktext[2])])
+> 
+>     energy = []
+>     ncol = 8
+>     nrow = nbnd // ncol
+>     if nbnd % ncol != 0:
+>         nrow += 1
+>     for ik in range(nkpt):
+>         energy.append([])
+>         nelem = ncol
+>         for ir in range(nrow):   
+>                 
+>             # Store each energy line from case.nscf.out
+>             eline = lines[idxbnd[ik] + ir]
+>                 
+>             # Set loop counter for etext to zero
+>             ei = 0
+>             # "range(2," -> Skip the first 2 blank characters
+>             # eline[ei:ei+9] -> Split energy line every 9 characters to the energy values
+>             etext = [eline[ei:ei+9] for ei in range(2, len(eline), 9)]
+>                                                 
+>             if ir == nrow - 1:
+>                 nelem = nbnd - ncol * (nrow - 1)
+>             for ie in range(nelem):  
+>                 energy[ik].append(float(etext[ie]) / rydberg)
+> 
+>     ## Structure ##
+> 
+>     # lattice vectors in bohr
+>     cell = np.empty((3, 3))
+>     for i in range(3):
+>         cell[i, :] = [avec[i][0],avec[i][1],avec[i][2]]
+>     # number of atoms
+>     natom = natom
+>     # All remaining lines: element names and coordinates
+>     cart = []
+>     for i in range(natom):
+>         fields = [str(symbolstring[i]),str(PosCartCoord[i][0]),str(PosCartCoord[i][1]),str(PosCartCoord[i][2])]
+>         print(fields[1:4])
+>         cart.append([ffloat(j) for j in fields[1:4]])
+>     cart = np.array(cart)
+> 
+>     ## Energy ##
+> 
+>     # nk, nspin
+>     nk, nspin = nkpt, int(spin)+1
+> 
+>     minband = np.infty
+>     ebands1 = []
+>     mommat1 = []
+>     kpoints = []
+>     for ispin in range(nspin):
+>         for ik in range(nk):
+>             # k block: line 1 = kx ky kz nband
+>             tmp = [str(kpoint[ik][0]),str(kpoint[ik][1]),str(kpoint[ik][2])]
+>             nband = nbnd
+>             if nband < minband:
+>                 minband = nband
+>             kpoints.append([ffloat(i) for i in tmp[0:3]])
+>             eband = []
+>             vband = []
+>             for ib in range(nband):
+>                 fields = [str(energy[ik][ib])]
+>                 e = ffloat(fields[0])
+>                 if len(fields) == 4:
+>                     v = [ffloat(i) for i in fields[1:]]
+>                 else:
+>                     v = []
+>                 eband.append(e)
+>                 vband.append(v)
+>             ebands1.append(eband)
+>             mommat1.append(vband)
+>     kpoints = np.array(kpoints)
+>     ebands1 = np.array(ebands1)
+>     mommat1 = np.array(mommat1)
+>     # When several spin channels are present, the full list of k points is
+>     # redundant.
+>     kpoints = kpoints[:kpoints.shape[0] // nspin, :]
+> 
+>     # Lists of bands for different spin channels at the same k point are
+>     # concatenated.
+>     ebands = np.empty((nk, nspin, minband))
+>     for ispin in range(nspin):
+>         for ik in range(nk):
+>             ebands[ik, ispin, :] = ebands1[ispin * nk + ik][:minband]
+>     ebands = ebands.reshape((nk, nspin * minband))
+>     if mommat1.ndim == 3 and mommat1.shape[2] == 3:
+>         mommat = np.empty((nk, nspin, minband, 3))
+>         for ispin in range(nspin):
+>             for ik in range(nk):
+>                 mommat[ik, ispin, :, :] = mommat1[ispin * nk + ik][:minband]
+>         mommat = mommat.reshape((nk, nspin * minband, 3))
+>     else:
+>         mommat = None
+> 
+>     # Convert everything to Ha and Ha / bohr
+>     efermi *= .5
+>     ebands *= .5
+>     if mommat is not None:
+>         mommat *= .5
+>     if nspin == 1 and spinorbit==0:
+>         dosweight = 2.
+>     else:
+>         dosweight = 1.
+> 
+>     # Bundle everything in an Atoms object plus other values and return them        
+>     return ase.Atoms(symbolstring,
+>                      positions=cart / Angstrom,
+>                      cell=cell / Angstrom,
+>                      pbc=[1, 1, 1]),efermi, dosweight, kpoints, ebands.T, mommat
+> 
+> 

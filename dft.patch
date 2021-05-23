@@ -1,0 +1,47 @@
+251a252,297
+> class QELoader:
+>     """Loader for QE calculations."""
+>     def __init__(self, directory):
+>         if not isinstance(directory, str):
+>             raise LoaderError("this loader only works with directories")
+>         qename = _get_QEsystemname(directory)
+>         if qename is None:
+>             raise LoaderError("cannot determine a QE system name")
+>         nscfout = qename + ".nscf.out"
+> 
+>         with BoltzTraP2.misc.dir_context(directory):
+>             BoltzTraP2.misc.info("QE system name:", qename)
+>             if not os.path.isfile(nscfout):
+>                 raise ValueError("prefix.nscf.out file not found")
+>                 
+>             BoltzTraP2.misc.info("lattice:")
+>             (
+>                 self.atoms,
+>                 self.fermi,
+>                 self.dosweight,
+>                 self.kpoints,
+>                 self.ebands,
+>                 mommat,
+>             ) = BoltzTraP2.io.read_parse_QE_nscfout(nscfout)
+>             if mommat is not None:
+>                 self.mommat = mommat
+>         self.sysname = qename
+> 
+> register_loader("QE", QELoader)
+> 
+> 
+> def _get_QEsystemname(dirname):
+>     """Try to guess the QE system name corresponding to a directory."""
+>     with BoltzTraP2.misc.dir_context(dirname):
+>         filenames = sorted(
+>             [i for i in glob.glob("*.nscf.out") if os.path.isfile(i)])
+>         if not filenames:
+>             return None
+>         if len(filenames) > 1:
+>             logging.warning(
+>                 "there is more than one .nscf.out file in the directory"
+>                 " - using the first one")
+> 
+>     return os.path.splitext(os.path.splitext(os.path.basename(filenames[0]))[0])[0]
+> 
+> 
