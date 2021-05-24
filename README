@@ -2,3 +2,6 @@ Scripts for BoltzTraP2
 
 - dft.patch and io.patch
 Description: These patch the BoltzTraP2 version 20.7.1 files to provide a direct interface to Quantum Espresso (QE) for non-spin polarized without spin-orbit calculations.
+
+- qe2boltzTwo.py
+Description: Obsolete script replaced by dft.patch and io.patch.
