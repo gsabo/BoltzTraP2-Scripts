@@ -53,7 +53,7 @@
 >             natom = int(line.split()[4])
 >         elif 'Sym.Ops.' in line or 'Sym. Ops.' in line:
 >             nsym = int(line.split()[0])
->         elif 'positions (cryst. coord.)' in line:
+>         elif 'positions (alat units)' in line:
 >             idatom = i + 1
 >         elif 'No symmetry found' in line:
 >             nsym = 1
@@ -86,7 +86,7 @@
 >             atmtext1 = lines1.split()
 >             atmtext2 = lines2.split()
 >             symbolstring.append(atmtext1[0])
->             PosCartCoord.append([float(atmtext2[0]),float(atmtext2[1]),float(atmtext2[2])])
+>             PosCartCoord.append([float(atmtext2[0])*alat,float(atmtext2[1])*alat,float(atmtext2[2])*alat])
 > 
 >     kpoint = []
 >     for ik in range(nkpt):

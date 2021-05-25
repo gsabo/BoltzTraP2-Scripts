@@ -12,7 +12,7 @@ def main(argv = None):
         self = '/' + argv[0]
         self = self[len(self)-self[::-1].find('/'):]
         print("")
-        print("    Version 1.0.3")
+        print("    Version 1.0.4")
         print("    Converts the output of Quantum Espresso 6.7")
         print("    to the input of BoltzTraP2. Modified version of qe2boltz.py for BoltzTraP2")
         print("    from that orginal written by Georgy Samsonidze,")
@@ -107,7 +107,7 @@ def main(argv = None):
             nelec = float(line.split()[4])
         elif 'Sym.Ops.' in line or 'Sym. Ops.' in line:
             nsym = int(line.split()[0])
-        elif 'positions (cryst. coord.)' in line:
+        elif 'positions (alat units)' in line:
             idatom = i + 1
         elif 'No symmetry found' in line:
             nsym = 1
@@ -147,7 +147,7 @@ def main(argv = None):
             atmtext1 = f_pw1.split()
             atmtext2 = f_pw2.split()
             symbolstring.append(atmtext1[0])
-            PosCartCoord.append([float(atmtext2[0]),float(atmtext2[1]),float(atmtext2[2])])
+            PosCartCoord.append([float(atmtext2[0])*alat,float(atmtext2[1])*alat,float(atmtext2[2])*alat])
 
     kpoint = []
     for ik in range(nkpt):
