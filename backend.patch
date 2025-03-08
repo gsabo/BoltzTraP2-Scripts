@@ -1,0 +1,6 @@
+28a29
+> #include <iostream>
+273a275,277
+>     std::cout << "spglib reported the following space group: "
+>               << data->international_symbol << "("
+>               << data->spacegroup_number << ")" << std::endl;

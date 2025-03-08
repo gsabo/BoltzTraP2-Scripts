@@ -3,3 +3,9 @@ Scripts for BoltzTraP2
 - dft.patch, io.patch, qe2boltz2.py, and qe2boltzTwo.py: 
 These files are no longer used as they are obsolete.
 Use BoltzTraP2 22.3.2 or later which reads the xml output file from Quantum Espresso (QE).
+
+- Place backend.patch into ~/venv/lib/python3.12/site-packages/BoltzTraP2/sphere/
+- Apply the patch with: patch -b backend.cpp backend.patch
+- Reinstall
+Description: Adds structure debugging informaton for Quantuam Esspresso to BoltzTraP2 25.3.1.
+Reference: https://groups.google.com/g/boltztrap/c/fO0Z1_FTYhg/m/-g0i0rvDAQAJ
