@@ -1,0 +1,20 @@
+<svg width="1024" height="300" viewBox="0 0 1024 300"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="1024" height="300" fill="#FFFFFF"/>
+
+  <!-- Text group, centered -->
+  <g font-family="Segoe UI, Arial, sans-serif"
+     font-weight="700"
+     text-anchor="middle">
+    <!-- "Boltz" -->
+    <text x="260" y="190" font-size="200" fill="#137EBB">
+      Boltz
+    </text>
+    <!-- "TraP2" -->
+    <text x="770" y="250" font-size="175" fill="#848485">
+      TraP2
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+
+  <!-- Rounded square border -->
+  <rect x="100" y="100" width="800" height="800" rx="60" ry="60"
+        fill="none"
+        stroke="#137EBB"
+        stroke-width="14"/>
+
+  <!-- Text group, centered -->
+  <g font-family="Segoe UI, Arial, sans-serif"
+     font-weight="700"
+     text-anchor="middle">
+    <!-- "Boltz" -->
+    <text x="490" y="425" font-size="300" fill="#137EBB">
+      Boltz
+    </text>
+    <!-- "TraP2" -->
+    <text x="490" y="750" font-size="250" fill="#848485">
+      TraP2
+    </text>
+  </g>
+</svg>
